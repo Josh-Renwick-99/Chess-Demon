@@ -41,4 +41,14 @@ class ChessDemonApplicationTests {
 			e.printStackTrace();
 		}
 	}
+
+	@Test
+	void findUserGames() {
+		DBService dbService = new DBService(config);
+		try {
+			System.out.println(dbService.findGames("testUser"));
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
 }

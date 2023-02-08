@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import javax.xml.transform.Result;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class DBService {
@@ -98,5 +100,28 @@ public class DBService {
             e.printStackTrace();
             System.out.println(e);
         }
+    }
+
+    public List<String> findGames(String discordId){
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "SELECT * FROM games WHERE userId = (SELECT userId FROM user WHERE discordId = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            List<String> games = new ArrayList<>();
+            preparedStatement.setString(1, discordId);
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()){
+                games.add(rs.getString(1));
+            }
+            conn.close();
+            return games;
+        } catch (Exception e){
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return null;
     }
 }
