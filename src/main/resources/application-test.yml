@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+name: test-yaml
+environment: testing
+enabled: true
+databaseDriver: com.mysql.cj.jdbc.Driver
+databaseSource: jdbc:mysql://127.0.0.1:3306/cdb?useSSL=false&allowPublicKeyRetrieval=true
+dbUser: root
+dbPass: Norfolk1515!
+
