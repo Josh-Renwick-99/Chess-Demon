@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Date;
+import java.sql.SQLException;
+
 @RestController
 public class ChessDemonController {
     @Autowired
@@ -34,9 +37,13 @@ public class ChessDemonController {
     }
 
     @GetMapping("/newgame")
-    public String newGame(@RequestParam String discordId){
+    public String newGame(@RequestParam String discordId) throws SQLException, ClassNotFoundException {
+        if (dbService.userExist(discordId)) {
+            dbService.newUser(discordId, new Date(System.currentTimeMillis()), 1, 1);
+        }
         dbService.newGame(discordId);
         Board board = new Board();
+        System.out.println(String.format("Completed request from '%s' to create new game", discordId));
         return board.getFen();
     }
 }

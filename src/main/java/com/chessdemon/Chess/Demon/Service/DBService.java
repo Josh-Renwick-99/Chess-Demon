@@ -141,8 +141,8 @@ public class DBService {
 
             String sql = "UPDATE games SET currentFenPosition = ? WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
-            preparedStatement.setString(1, discordId);
-            preparedStatement.setString(2, currentFen);
+            preparedStatement.setString(1, currentFen);
+            preparedStatement.setString(2, discordId);
             preparedStatement.execute();
             conn.close();
         } catch (Exception e) {
@@ -196,5 +196,24 @@ public class DBService {
             System.out.println(e);
         }
         return null;
+    }
+
+    public boolean userExist(String discordId){
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+            String sql = "SELECT * FROM user WHERE discordId = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            ResultSet rs = preparedStatement.executeQuery();
+            boolean exists = rs.isBeforeFirst();
+            conn.close();
+            return !exists;
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return false;
     }
 }
