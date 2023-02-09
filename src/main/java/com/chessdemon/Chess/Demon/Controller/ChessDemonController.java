@@ -33,8 +33,10 @@ public class ChessDemonController {
         return board.getFen();
     }
 
-    @GetMapping("/NewGame")
-    public void newGame(@RequestParam String discordId){
+    @GetMapping("/newgame")
+    public String newGame(@RequestParam String discordId){
         dbService.newGame(discordId);
+        Board board = new Board();
+        return board.getFen();
     }
 }
