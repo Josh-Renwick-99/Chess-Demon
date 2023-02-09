@@ -1,6 +1,7 @@
 package com.chessdemon.Chess.Demon.Service;
 
 import com.chessdemon.Chess.Demon.Configuration.ChessDemonConfigurationProperties;
+import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
 import org.springframework.stereotype.Service;
 
 import javax.xml.transform.Result;
@@ -11,9 +12,11 @@ import java.util.List;
 @Service
 public class DBService {
     ChessDemonConfigurationProperties config;
-    public DBService(ChessDemonConfigurationProperties config){
+
+    public DBService(ChessDemonConfigurationProperties config) {
         this.config = config;
     }
+
     public void newUser(String discordId, Date date, Integer winCount, Integer gamesPlayed) throws SQLException, ClassNotFoundException {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
@@ -27,14 +30,14 @@ public class DBService {
             preparedStatement.setInt(4, gamesPlayed);
             preparedStatement.execute();
             conn.close();
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
             System.out.println(e);
         }
     }
 
-    public void newGame(String discordId, String moveHistory, String winner){
+    public void newGame(String discordId, String moveHistory, String winner) {
         try {
             String startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
@@ -57,14 +60,42 @@ public class DBService {
             preparedStatement.setString(2, discordId);
             preparedStatement.execute();
             conn.close();
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
             System.out.println(e);
         }
     }
 
-    public void setActiveGame(String discordId, Integer gameId){
+    public void newGame(String discordId) {
+        try {
+            String startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = " INSERT INTO games (userId, currentFenPosition) VALUES ((SELECT userId FROM user WHERE discordId = ?), ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            preparedStatement.setString(2, startingFen);
+            preparedStatement.execute();
+            preparedStatement = conn.prepareStatement("SELECT last_insert_id() FROM games");
+            ResultSet rs = preparedStatement.executeQuery();
+            rs.next();
+            int lastGameId = Integer.valueOf(rs.getString(1));
+            sql = "UPDATE user SET activeGameId = ? WHERE discordId = ?";
+            preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setInt(1, lastGameId);
+            preparedStatement.setString(2, discordId);
+            preparedStatement.execute();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+    public void setActiveGame(String discordId, Integer gameId) {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
             Class.forName(config.getDatabaseDriver());
@@ -76,33 +107,52 @@ public class DBService {
             preparedStatement.setString(2, discordId);
             preparedStatement.execute();
             conn.close();
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
             System.out.println(e);
         }
     }
 
-    public void updateGame(String discordId, String move, String moveHistory){
+    public void updateGame(String discordId, String move, String moveHistory, String currentFenPosition) {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
             Class.forName(config.getDatabaseDriver());
 
-            String sql = "UPDATE games SET lastMove = ?, moveHistory = ? WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
+            String sql = "UPDATE games SET lastMove = ?, moveHistory = ?, currentFenPosition = ? WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             preparedStatement.setString(1, move);
             preparedStatement.setString(2, moveHistory);
             preparedStatement.setString(3, discordId);
+            preparedStatement.setString(4, currentFenPosition);
             preparedStatement.execute();
             conn.close();
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
             System.out.println(e);
         }
     }
 
-    public List<String> findGames(String discordId){
+    public void updatePosition(String discordId, String currentFen){
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "UPDATE games SET currentFenPosition = ? WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            preparedStatement.setString(2, currentFen);
+            preparedStatement.execute();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+    public List<String> findGames(String discordId) {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
             Class.forName(config.getDatabaseDriver());
@@ -112,12 +162,35 @@ public class DBService {
             List<String> games = new ArrayList<>();
             preparedStatement.setString(1, discordId);
             ResultSet rs = preparedStatement.executeQuery();
-            while (rs.next()){
+            while (rs.next()) {
                 games.add(rs.getString(1));
             }
             conn.close();
             return games;
-        } catch (Exception e){
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    public GameCrud findActiveGame(String discordId) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "SELECT * FROM games WHERE gameId = (SELECT activeGameId FROM user WHERE discordId = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                GameCrud gameCrud = new GameCrud(rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6));
+                conn.close();
+                return gameCrud;
+            }
+            conn.close();
+        } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
             System.out.println(e);

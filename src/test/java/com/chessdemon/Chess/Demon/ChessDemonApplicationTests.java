@@ -1,7 +1,9 @@
 package com.chessdemon.Chess.Demon;
 
 import com.chessdemon.Chess.Demon.Configuration.ChessDemonConfigurationProperties;
+import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
 import com.chessdemon.Chess.Demon.Service.DBService;
+import com.github.bhlangonijr.chesslib.Board;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,16 +35,6 @@ class ChessDemonApplicationTests {
 		}
 	}
 	@Test
-	void testUpdateGame() {
-		DBService dbService = new DBService(config);
-		try {
-			dbService.updateGame("testUser", "", "E4");
-		} catch (Exception e){
-			e.printStackTrace();
-		}
-	}
-
-	@Test
 	void findUserGames() {
 		DBService dbService = new DBService(config);
 		try {
@@ -50,5 +42,23 @@ class ChessDemonApplicationTests {
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+	}
+
+	@Test
+	void findActiveGame() {
+		DBService dbService = new DBService(config);
+		try {
+			GameCrud game = dbService.findActiveGame("new");
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	void testMove(){
+		Board board = new Board();
+		System.out.println(board.getFen());
+		board.doMove("e4");
+		System.out.println(board.getFen());
 	}
 }
