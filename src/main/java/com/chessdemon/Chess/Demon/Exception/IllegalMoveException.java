@@ -1,4 +1,4 @@
-package com.chessdemon.Chess.Demon;
+package com.chessdemon.Chess.Demon.Exception;
 
 public class IllegalMoveException extends IllegalArgumentException{
     public IllegalMoveException(String move){
