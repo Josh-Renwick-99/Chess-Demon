@@ -4,7 +4,6 @@ import com.chessdemon.Chess.Demon.Configuration.ChessDemonConfigurationPropertie
 import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
 import org.springframework.stereotype.Service;
 
-import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
