@@ -67,16 +67,17 @@ public class DBService {
         }
     }
 
-    public void newGame(String discordId) {
+    public void newGame(String discordId, String threadName) {
         try {
             String startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
             Class.forName(config.getDatabaseDriver());
 
-            String sql = " INSERT INTO games (userId, currentFenPosition) VALUES ((SELECT userId FROM user WHERE discordId = ?), ?)";
+            String sql = " INSERT INTO games (userId, currentFenPosition, threadName) VALUES ((SELECT userId FROM user WHERE discordId = ?), ?, ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             preparedStatement.setString(1, discordId);
             preparedStatement.setString(2, startingFen);
+            preparedStatement.setString(3, threadName);
             preparedStatement.execute();
             preparedStatement = conn.prepareStatement("SELECT last_insert_id() FROM games");
             ResultSet rs = preparedStatement.executeQuery();
@@ -230,6 +231,29 @@ public class DBService {
                 return gameCrud;
             }
             conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    public String findThreadOfActiveGame(String discordId) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "SELECT threadName FROM games WHERE gameId = (SELECT activeGameId FROM user WHERE discordId = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            ResultSet rs = preparedStatement.executeQuery();
+            String threadName = null;
+            while (rs.next()) {
+                 threadName = rs.getString(1);
+            }
+            conn.close();
+            return threadName;
         } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();

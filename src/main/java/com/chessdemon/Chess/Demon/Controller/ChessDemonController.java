@@ -75,14 +75,24 @@ public class ChessDemonController {
     }
 
     @GetMapping("/newgame")
-    public ResponseEntity<Game> newGame(@RequestParam String discordId) throws SQLException, ClassNotFoundException {
+    public ResponseEntity<Game> newGame(@RequestParam String discordId, @RequestParam String threadName) throws SQLException, ClassNotFoundException {
         if (dbService.userExist(discordId)) {
             dbService.newUser(discordId, new Date(System.currentTimeMillis()), 1, 1);
         }
-        dbService.newGame(discordId);
+        dbService.newGame(discordId, threadName);
         Board board = new Board();
         System.out.println(String.format("Completed request from '%s' to create new game", discordId));
         Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId);
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
+    }
+
+    @GetMapping("/getThread")
+    public ResponseEntity<String> getThread(String discordId){
+        String threadName = dbService.findThreadOfActiveGame(discordId);
+        if (threadName == null){
+            return new ResponseEntity<>("User has no active game", HttpStatus.BAD_REQUEST);
+        } else {
+            return new ResponseEntity<>(threadName, HttpStatus.OK);
+        }
     }
 }
