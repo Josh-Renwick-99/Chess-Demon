@@ -17,6 +17,6 @@ public class ChessDemonApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		System.out.println(config.getName());
+		System.out.println("ChessDemonAPI is up");
 	}
 }

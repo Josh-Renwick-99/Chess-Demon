@@ -2,6 +2,7 @@ package com.chessdemon.Chess.Demon.Service;
 
 import com.chessdemon.Chess.Demon.Configuration.ChessDemonConfigurationProperties;
 import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
+import com.chessdemon.Chess.Demon.Model.GameView;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
@@ -113,6 +114,24 @@ public class DBService {
         }
     }
 
+    public void removeActiveGame(String discordId) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "UPDATE user SET activeGameId = null WHERE discordId = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            preparedStatement.execute();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
     public void updateGame(String discordId, String move, String moveHistory, String currentFenPosition) {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
@@ -124,6 +143,27 @@ public class DBService {
             preparedStatement.setString(2, moveHistory);
             preparedStatement.setString(3, discordId);
             preparedStatement.setString(4, currentFenPosition);
+            preparedStatement.execute();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
+    public void checkMateGame(String discordId, String move, String moveHistory, String currentFenPosition, String turn) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "UPDATE games SET lastMove = ?, moveHistory = ?, currentFenPosition = ?, turn = ?, mated = 1, active = 0 WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, move);
+            preparedStatement.setString(2, moveHistory);
+            preparedStatement.setString(3, discordId);
+            preparedStatement.setString(4, currentFenPosition);
+            preparedStatement.setString(5, turn);
             preparedStatement.execute();
             conn.close();
         } catch (Exception e) {
@@ -152,18 +192,18 @@ public class DBService {
         }
     }
 
-    public List<String> findGames(String discordId) {
+    public List<GameView> findGames(String discordId) {
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
             Class.forName(config.getDatabaseDriver());
 
-            String sql = "SELECT * FROM games WHERE userId = (SELECT userId FROM user WHERE discordId = ?)";
+            String sql = "SELECT gameId, currentFenPosition, san, datePlayed FROM games WHERE userId = (SELECT userId FROM user WHERE discordId = ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
-            List<String> games = new ArrayList<>();
+            List<GameView> games = new ArrayList<>();
             preparedStatement.setString(1, discordId);
             ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
-                games.add(rs.getString(1));
+                games.add(new GameView(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getDate(4)));
             }
             conn.close();
             return games;

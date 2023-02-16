@@ -3,8 +3,10 @@ package com.chessdemon.Chess.Demon.Controller;
 import com.chessdemon.Chess.Demon.Exception.IllegalMoveException;
 import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
 import com.chessdemon.Chess.Demon.Model.Game;
+import com.chessdemon.Chess.Demon.Model.GameView;
 import com.chessdemon.Chess.Demon.Service.DBService;
 import com.github.bhlangonijr.chesslib.Board;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.sql.Date;
 import java.sql.SQLException;
+import java.util.List;
 
+@Slf4j
 @RestController
 public class ChessDemonController {
     @Autowired
@@ -27,6 +31,17 @@ public class ChessDemonController {
     @GetMapping("/ping")
     public String ping() {
         return "pong " + appName;
+    }
+
+    @GetMapping("/games")
+    public ResponseEntity<List<GameView>> games(@RequestParam String discordId){
+        log.info(String.format("Received games request from '%s'", discordId));
+        List<GameView> games = dbService.findGames(discordId);
+        if (games.size() >= 1){
+            return new ResponseEntity<>(games, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
     }
 
     @GetMapping("/move")
@@ -40,13 +55,21 @@ public class ChessDemonController {
         }
         Board board = new Board();
         board.loadFromFen(game.getCurrentFen());
-        if (board.legalMoves().contains(move)) {
-            board.doMove(move);
-        } else {
+        try {
+            if (!board.isMated()){
+                board.doMove(move);
+                if(board.isMated()){
+                    dbService.checkMateGame(discordId, move, san, board.getFen(), board.getSideToMove().name());
+                    dbService.removeActiveGame(discordId);
+                }
+            }
+        } catch (Exception e){
+            log.warn(String.format("User '%s' made illegal move"), discordId);
             throw new IllegalMoveException(move);
         }
         dbService.updatePosition(discordId, board.getFen(), san);
         Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, move, san);
+        returnGame.setMated(board.isMated());
         returnGame.setPosition(board.getFen());
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
     }
@@ -61,10 +84,5 @@ public class ChessDemonController {
         System.out.println(String.format("Completed request from '%s' to create new game", discordId));
         Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId);
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
-    }
-
-    @ExceptionHandler
-    public void handleExcepiton(){
-
     }
 }

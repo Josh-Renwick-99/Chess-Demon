@@ -9,7 +9,7 @@ public class Game {
     String turn;
     String discordId;
     String move;
-
+    Boolean mated;
     String san;
 
     public Game(String position, String turn, String discordId, String move, String san){
