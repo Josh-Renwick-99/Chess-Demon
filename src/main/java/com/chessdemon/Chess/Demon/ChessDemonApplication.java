@@ -1,7 +1,6 @@
 package com.chessdemon.Chess.Demon;
 
 import com.chessdemon.Chess.Demon.Configuration.ChessDemonConfigurationProperties;
-import com.chessdemon.Chess.Demon.Service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -18,6 +17,6 @@ public class ChessDemonApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		System.out.println(config.getName());
+		System.out.println("ChessDemonAPI is up");
 	}
 }
