@@ -4,17 +4,18 @@ import com.chessdemon.Chess.Demon.Exception.IllegalMoveException;
 import com.chessdemon.Chess.Demon.Model.Crud.GameCrud;
 import com.chessdemon.Chess.Demon.Model.Game;
 import com.chessdemon.Chess.Demon.Model.GameView;
+import com.chessdemon.Chess.Demon.Model.StockfishRequest;
+import com.chessdemon.Chess.Demon.Model.StockfishResponse;
 import com.chessdemon.Chess.Demon.Service.DBService;
+import com.chessdemon.Chess.Demon.Service.StockfishService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.bhlangonijr.chesslib.Board;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
 import java.sql.SQLException;
@@ -25,6 +26,10 @@ import java.util.List;
 public class ChessDemonController {
     @Autowired
     DBService dbService;
+
+    @Autowired
+    StockfishService stockfishService;
+
     @Value("${spring.application.name}")
     String appName;
 
@@ -45,7 +50,7 @@ public class ChessDemonController {
     }
 
     @GetMapping("/move")
-    public ResponseEntity<Game> move(@RequestParam String discordId, @RequestParam String move){
+    public ResponseEntity<Game> move(@RequestParam String discordId, @RequestParam String move) throws JsonProcessingException {
         GameCrud game = dbService.findActiveGame(discordId);
         String san = "";
         if (game.getSan() == null){
@@ -67,8 +72,10 @@ public class ChessDemonController {
             log.warn(String.format("User '%s' made illegal move"), discordId);
             throw new IllegalMoveException(move);
         }
-        dbService.updatePosition(discordId, board.getFen(), san);
-        Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, move, san);
+        StockfishRequest request = new StockfishRequest(san, 5, 5);
+        StockfishResponse response = stockfishService.getNextMove(request);
+        dbService.updatePosition(discordId, response.getFen(), response.getLAN());
+        Game returnGame = new Game(response.getFen(), board.getSideToMove().name(), discordId, move, response.getLAN());
         returnGame.setMated(board.isMated());
         returnGame.setPosition(board.getFen());
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
@@ -85,6 +92,30 @@ public class ChessDemonController {
         Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId);
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
     }
+
+    @GetMapping
+    public Game swapGame(@RequestParam String discordId, @RequestParam Integer gameId){
+        GameCrud game = dbService.findActiveGame(discordId);
+        String san = "";
+        Board board = new Board();
+        board.loadFromFen(game.getCurrentFen());
+        dbService.updatePosition(discordId, board.getFen(), san);
+        dbService.setActiveGame(discordId, gameId);
+        Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, null, san);
+        returnGame.setPosition(board.getFen());
+        return returnGame;
+    }
+
+    @DeleteMapping
+    public boolean deleteUser(@RequestParam String discordId) throws Exception {
+        try {
+            dbService.deleteUser(discordId);
+            return true;
+        } catch (Exception e){
+            throw new Exception(e);
+        }
+    }
+
 
     @GetMapping("/getThread")
     public ResponseEntity<String> getThread(String discordId){

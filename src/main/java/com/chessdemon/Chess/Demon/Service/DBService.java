@@ -37,6 +37,23 @@ public class DBService {
         }
     }
 
+    public void deleteUser(String discordId) throws SQLException, ClassNotFoundException {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = " DELETE FROM user WHERE discordId=?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+            preparedStatement.execute();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
     public void newGame(String discordId, String moveHistory, String winner) {
         try {
             String startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -254,6 +271,29 @@ public class DBService {
             }
             conn.close();
             return threadName;
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    public GameCrud findGameById(Integer gameId) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "SELECT * FROM games WHERE gameId = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, gameId.toString());
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                GameCrud gameCrud = new GameCrud(rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6));
+                conn.close();
+                return gameCrud;
+            }
+            conn.close();
         } catch (Exception e) {
             System.out.println("Exception on method");
             e.printStackTrace();
