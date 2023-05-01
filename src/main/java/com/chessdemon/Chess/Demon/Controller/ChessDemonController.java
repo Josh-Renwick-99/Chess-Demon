@@ -115,8 +115,7 @@ public class ChessDemonController {
             throw new Exception(e);
         }
     }
-
-
+    
     @GetMapping("/getThread")
     public ResponseEntity<String> getThread(String discordId){
         String threadName = dbService.findThreadOfActiveGame(discordId);
