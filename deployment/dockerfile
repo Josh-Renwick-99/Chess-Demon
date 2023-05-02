@@ -1,0 +1,6 @@
+FROM mysql:latest
+COPY cdb_games.sql /docker-entrypoint-initdb.d/
+COPY cdb_user.sql /docker-entrypoint-initdb.d/
+ENV MYSQL_ALLOW_EMPTY_PASSWORD=true
+ENV MYSQL_DATABASE=cdb
+EXPOSE 3306

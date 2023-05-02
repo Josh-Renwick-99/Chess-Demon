@@ -74,8 +74,8 @@ public class ChessDemonController {
         }
         StockfishRequest request = new StockfishRequest(san, 5, 5);
         StockfishResponse response = stockfishService.getNextMove(request);
-        dbService.updatePosition(discordId, response.getFen(), response.getLAN());
-        Game returnGame = new Game(response.getFen(), board.getSideToMove().name(), discordId, move, response.getLAN());
+        dbService.updatePosition(discordId, response.getFen(), san);
+        Game returnGame = new Game(response.getFen(), board.getSideToMove().name(), discordId, move, san);
         returnGame.setMated(board.isMated());
         returnGame.setPosition(board.getFen());
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
@@ -115,7 +115,7 @@ public class ChessDemonController {
             throw new Exception(e);
         }
     }
-    
+
     @GetMapping("/getThread")
     public ResponseEntity<String> getThread(String discordId){
         String threadName = dbService.findThreadOfActiveGame(discordId);

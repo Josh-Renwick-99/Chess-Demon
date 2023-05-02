@@ -8,5 +8,5 @@ public class StockfishResponse {
     public String fen;
     public boolean isCheck;
     public boolean isMate;
-    public String LAN;
+    public String movetext;
 }

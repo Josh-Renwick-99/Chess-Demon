@@ -6,7 +6,7 @@ name: test-yaml
 environment: testing
 enabled: true
 databaseDriver: com.mysql.cj.jdbc.Driver
-databaseSource: jdbc:mysql://chessdemondb.mysql.database.azure.com:3306/cdb?useSSL=false
-dbUser: chessdemondb
-dbPass: Norfolk15!
+databaseSource: jdbc:mysql://localhost:8085/cdb?useSSL=false
+dbUser: root
+
 
