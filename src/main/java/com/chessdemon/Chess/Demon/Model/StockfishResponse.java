@@ -4,9 +4,9 @@ import lombok.Data;
 
 @Data
 public class StockfishResponse {
+
+    public StockfishResponse(String move){
+        this.move = move;
+    }
     public String move;
-    public String fen;
-    public boolean isCheck;
-    public boolean isMate;
-    public String movetext;
 }

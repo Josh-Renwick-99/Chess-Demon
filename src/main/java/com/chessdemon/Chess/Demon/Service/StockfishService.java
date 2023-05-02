@@ -15,13 +15,13 @@ public class StockfishService {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String url = "https://pchess.net/api/engine/stockfish";
-        String requestBody = String.format("{\"movetext\": \"%s\",\"skillLevel\": \"%s\",\"depth\": \"%s\"}", request.LAN, request.skillLevel, request.depth);
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        ObjectMapper mapper = new ObjectMapper();
-        StockfishResponse stockfishResponse = mapper.readValue(response.getBody(), StockfishResponse.class);
-        System.out.println(response.getBody());
+        String url = String.format("https://www.chessdb.cn/cdb.php?action=querybest&board=%s", request.fen);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        String responseBody = response.getBody();
+        String nextMove = responseBody.split(":")[1].trim();
+        StockfishResponse stockfishResponse = new StockfishResponse(nextMove);
+        System.out.println(stockfishResponse);
         return stockfishResponse;
     }
 }

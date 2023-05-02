@@ -72,10 +72,12 @@ public class ChessDemonController {
             log.warn(String.format("User '%s' made illegal move"), discordId);
             throw new IllegalMoveException(move);
         }
-        StockfishRequest request = new StockfishRequest(san, 5, 5);
+        StockfishRequest request = new StockfishRequest(board.getFen(), 5, 5);
         StockfishResponse response = stockfishService.getNextMove(request);
-        dbService.updatePosition(discordId, response.getFen(), san);
-        Game returnGame = new Game(response.getFen(), board.getSideToMove().name(), discordId, move, san);
+        board.doMove(response.move);
+        san += String.format(" %s", response.move);
+        dbService.updatePosition(discordId, board.getFen(), san);
+        Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, move, san);
         returnGame.setMated(board.isMated());
         returnGame.setPosition(board.getFen());
         return new ResponseEntity<>(returnGame, HttpStatus.OK);
