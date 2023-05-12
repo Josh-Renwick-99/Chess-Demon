@@ -15,13 +15,17 @@ public class StockfishService {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String url = String.format("https://www.chessdb.cn/cdb.php?action=querybest&board=%s", request.fen);
+        String url = String.format("https://www.chessdb.cn/cdb.php?action=query&board=%s", request.fen);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
         String responseBody = response.getBody();
-        String nextMove = responseBody.split(":")[1].trim();
-        StockfishResponse stockfishResponse = new StockfishResponse(nextMove);
-        System.out.println(stockfishResponse);
-        return stockfishResponse;
+        if (responseBody.contains("nobestmove")){
+            return new StockfishResponse(true);
+        } else {
+            String nextMove = responseBody.split(":")[1].trim();
+            StockfishResponse stockfishResponse = new StockfishResponse(nextMove);
+            System.out.println(stockfishResponse);
+            return stockfishResponse;
+        }
     }
 }

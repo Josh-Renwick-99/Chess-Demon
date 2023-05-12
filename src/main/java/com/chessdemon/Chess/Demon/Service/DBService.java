@@ -191,6 +191,23 @@ public class DBService {
         }
     }
 
+    //overloaded for single API call
+    public void checkMateGame(String discordId) {
+        try {
+            Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());
+            Class.forName(config.getDatabaseDriver());
+
+            String sql = "UPDATE games SET mated = 1, active = 0 WHERE gameId = (SELECT activeGameId FROM user WHERE discordID = ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, discordId);
+
+        } catch (Exception e) {
+            System.out.println("Exception on method");
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
     public void updatePosition(String discordId, String currentFen, String san){
         try {
             Connection conn = DriverManager.getConnection(config.getDatabaseSource(), config.getDbUser(), config.getDbPass());

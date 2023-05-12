@@ -10,6 +10,8 @@ import com.chessdemon.Chess.Demon.Service.DBService;
 import com.chessdemon.Chess.Demon.Service.StockfishService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.bhlangonijr.chesslib.Board;
+import com.github.bhlangonijr.chesslib.Square;
+import com.github.bhlangonijr.chesslib.move.Move;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,26 +63,44 @@ public class ChessDemonController {
         Board board = new Board();
         board.loadFromFen(game.getCurrentFen());
         try {
-            if (!board.isMated()){
-                board.doMove(move);
-                if(board.isMated()){
-                    dbService.checkMateGame(discordId, move, san, board.getFen(), board.getSideToMove().name());
-                    dbService.removeActiveGame(discordId);
+            if (!board.isMated()) {
+                String moveFrom = move.substring(0, 2);
+                String moveTo = move.substring(2);
+                Square squareFrom = Square.fromValue(moveFrom.toUpperCase());
+                Square squareTo = Square.fromValue(moveTo.toUpperCase());
+                Move newMove = new Move(squareFrom, squareTo);
+                if (board.isMoveLegal(newMove, true)) {
+                    board.doMove(newMove);
+                    if (board.isMated()) {
+                        dbService.checkMateGame(discordId, move, san, board.getFen(), board.getSideToMove().name());
+                        dbService.removeActiveGame(discordId);
+                    }
+                } else {
+                    return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
                 }
             }
         } catch (Exception e){
             log.warn(String.format("User '%s' made illegal move"), discordId);
-            throw new IllegalMoveException(move);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
         StockfishRequest request = new StockfishRequest(board.getFen(), 5, 5);
         StockfishResponse response = stockfishService.getNextMove(request);
-        board.doMove(response.move);
-        san += String.format(" %s", response.move);
-        dbService.updatePosition(discordId, board.getFen(), san);
-        Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, move, san);
-        returnGame.setMated(board.isMated());
-        returnGame.setPosition(board.getFen());
-        return new ResponseEntity<>(returnGame, HttpStatus.OK);
+        if (response.ilegal != true) {
+            board.doMove(response.move);
+            san += String.format(" %s", response.move);
+            dbService.updatePosition(discordId, board.getFen(), san);
+            Game returnGame = new Game(board.getFen(), board.getSideToMove().name(), discordId, move, san);
+            returnGame.setMated(board.isMated());
+            returnGame.setPosition(board.getFen());
+            return new ResponseEntity<>(returnGame, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/mated")
+    public void gameMated(@RequestParam String discordId){
+        dbService.checkMateGame(discordId);
     }
 
     @GetMapping("/newgame")
